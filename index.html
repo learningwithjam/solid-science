@@ -1,0 +1,363 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leak, Soak, Repel Experiment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* Prevents double-tap zoom on mobile */
+        }
+        .cup-container {
+            position: relative;
+            width: 150px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        .cup {
+            position: absolute;
+            bottom: 0;
+            width: 120px;
+            height: 150px;
+            left: 15px;
+            background-color: #E2E8F0;
+            border: 3px solid #4A5568;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+        .material {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            width: 150px;
+            height: 20px;
+            border: 3px solid #4A5568;
+            border-radius: 5px;
+            z-index: 10;
+            transition: background-color 0.5s ease, opacity 0.5s ease;
+        }
+        #paper { background-color: #FFFFFF; }
+        #tissue { background-color: #F7FAFC; opacity: 0.8; }
+        #plastic { background-color: #FFFFFF; opacity: 0.4; }
+
+
+        .water-in-cup {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            background-color: #63B3ED;
+            border-radius: 0 0 15px 15px;
+            transition: height 0.5s ease;
+            height: 0;
+        }
+
+
+        .drop-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 50px;
+            z-index: 20;
+        }
+        .drop {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #63B3ED;
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+
+        .repelled-drop {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #63B3ED;
+            border-radius: 50%;
+            z-index: 15;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+
+    <div class="w-full max-w-5xl mx-auto text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Leak, Soak, or Repel?</h1>
+        <p class="text-gray-600 mb-8">Click the "Add Drop" button for each material to see what happens! (Max 10 drops)</p>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Paper Column -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Paper</h2>
+                <div class="cup-container mb-4">
+                    <div class="drop-container" id="drop-container-paper"></div>
+                    <div class="material" id="paper"></div>
+                    <div class="cup">
+                        <div class="water-in-cup" id="water-paper"></div>
+                    </div>
+                </div>
+                <button id="paper-button" onclick="addDrop('paper')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 w-32 mb-4">Add Drop</button>
+                <p class="text-lg font-medium text-gray-800">Drops: <span id="drops-paper">0</span> / 10</p>
+                <p class="text-md text-gray-600 h-12 mt-2" id="status-paper">Ready to start!</p>
+            </div>
+
+
+            <!-- Tissue Column -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Tissue</h2>
+                <div class="cup-container mb-4">
+                    <div class="drop-container" id="drop-container-tissue"></div>
+                    <div class="material" id="tissue"></div>
+                    <div class="cup">
+                        <div class="water-in-cup" id="water-tissue"></div>
+                    </div>
+                </div>
+                <button id="tissue-button" onclick="addDrop('tissue')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 w-32 mb-4">Add Drop</button>
+                <p class="text-lg font-medium text-gray-800">Drops: <span id="drops-tissue">0</span> / 10</p>
+                <p class="text-md text-gray-600 h-12 mt-2" id="status-tissue">Ready to start!</p>
+            </div>
+
+
+            <!-- Plastic Wrap Column -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Plastic Wrap</h2>
+                <div class="cup-container mb-4">
+                    <div class="drop-container" id="drop-container-plastic"></div>
+                    <div class="material" id="plastic">
+                        <div id="repelled-drops-container" class="absolute w-full h-full top-[-10px]"></div>
+                    </div>
+                    <div class="cup">
+                        <div class="water-in-cup" id="water-plastic"></div>
+                    </div>
+                </div>
+                <button id="plastic-button" onclick="addDrop('plastic')" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 w-32 mb-4">Add Drop</button>
+                <p class="text-lg font-medium text-gray-800">Drops: <span id="drops-plastic">0</span> / 10</p>
+                <p class="text-md text-gray-600 h-12 mt-2" id="status-plastic">Ready to start!</p>
+            </div>
+        </div>
+
+
+        <button onclick="resetExperiment()" class="mt-12 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105">Reset Experiment</button>
+    </div>
+
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        const experimentState = {
+            paper: { drops: 0, waterLevel: 0, status: 'dry', hasLeaked: false },
+            tissue: { drops: 0, waterLevel: 0, status: 'dry', hasLeaked: false },
+            plastic: { drops: 0, waterLevel: 0, status: 'dry', repelledDrops: [] }
+        };
+
+
+        // --- DOM ELEMENT REFERENCES ---
+        const elements = {
+            paper: {
+                drops: document.getElementById('drops-paper'),
+                status: document.getElementById('status-paper'),
+                material: document.getElementById('paper'),
+                water: document.getElementById('water-paper'),
+                dropContainer: document.getElementById('drop-container-paper'),
+                button: document.getElementById('paper-button')
+            },
+            tissue: {
+                drops: document.getElementById('drops-tissue'),
+                status: document.getElementById('status-tissue'),
+                material: document.getElementById('tissue'),
+                water: document.getElementById('water-tissue'),
+                dropContainer: document.getElementById('drop-container-tissue'),
+                button: document.getElementById('tissue-button')
+            },
+            plastic: {
+                drops: document.getElementById('drops-plastic'),
+                status: document.getElementById('status-plastic'),
+                material: document.getElementById('plastic'),
+                water: document.getElementById('water-plastic'),
+                dropContainer: document.getElementById('drop-container-plastic'),
+                repelledContainer: document.getElementById('repelled-drops-container'),
+                button: document.getElementById('plastic-button')
+            }
+        };
+
+
+        // --- CORE LOGIC ---
+
+
+        /**
+         * Handles adding a drop of water, up to a maximum of 10.
+         * @param {string} type - The material type ('paper', 'tissue', 'plastic').
+         */
+        function addDrop(type) {
+            const state = experimentState[type];
+            if (state.drops >= 10) return; // Stop if max drops reached
+
+
+            state.drops++;
+            
+            if (state.drops === 10) {
+                elements[type].button.disabled = true;
+                elements[type].button.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+
+            animateDrop(type);
+            updateState(type);
+            updateUI(type);
+        }
+
+
+        /**
+         * Creates and animates a single water drop falling.
+         * @param {string} type - The material type.
+         */
+        function animateDrop(type) {
+            const container = elements[type].dropContainer;
+            const drop = document.createElement('div');
+            drop.className = 'drop';
+            container.appendChild(drop);
+
+
+            drop.animate([
+                { top: '0px', opacity: 1, offset: 0 },
+                { top: '50px', opacity: 1, offset: 0.9 },
+                { top: '50px', opacity: 0, offset: 1 }
+            ], {
+                duration: 500,
+                easing: 'ease-in'
+            }).onfinish = () => {
+                drop.remove();
+            };
+        }
+
+
+        /**
+         * Updates the state of a material based on the number of drops.
+         * @param {string} type - The material type.
+         */
+        function updateState(type) {
+            const state = experimentState[type];
+            const statusEl = elements[type].status;
+
+
+            switch(type) {
+                case 'paper':
+                    if (state.drops === 10) {
+                        state.status = 'leaking'; // Final state
+                        statusEl.textContent = "The paper has soaked up as much as it can, any more it will start to leak.";
+                    } else if (state.drops >= 3) {
+                        state.status = 'soaking';
+                        statusEl.textContent = "The paper is soaking up the water.";
+                    } else {
+                        statusEl.textContent = "Adding water to the paper...";
+                    }
+                    break;
+                case 'tissue':
+                    if (state.drops >= 2) {
+                        if (!state.hasLeaked) {
+                           state.status = 'leaking';
+                           state.hasLeaked = true;
+                        }
+                        statusEl.textContent = "The tissue can't hold any more water, it is leaking.";
+                    } else if (state.drops === 1) {
+                        state.status = 'soaking';
+                        statusEl.textContent = "The tissue is soaking up water very quickly.";
+                    }
+                    
+                    if (state.hasLeaked) {
+                        state.waterLevel += 25;
+                    }
+                    break;
+                case 'plastic':
+                    state.status = 'repelling';
+                    statusEl.textContent = "The plastic wrap repels the water. It sits on top!";
+                    state.repelledDrops.push({
+                        x: 20 + Math.random() * 60,
+                        y: Math.random() * -5
+                    });
+                    break;
+            }
+        }
+
+
+        /**
+         * Updates the visual user interface based on the current state.
+         * @param {string} type - The material type.
+         */
+        function updateUI(type) {
+            const state = experimentState[type];
+            const el = elements[type];
+
+
+            el.drops.textContent = state.drops;
+
+
+            if (state.status === 'soaking' || (type === 'paper' && state.drops < 10)) {
+                el.material.style.backgroundColor = '#BFDBFE';
+            }
+            if (state.status === 'leaking') {
+                el.material.style.backgroundColor = '#93C5FD';
+                el.material.style.opacity = type === 'tissue' ? '0.6' : '0.8';
+            }
+
+
+            if (el.water) {
+                el.water.style.height = `${Math.min(state.waterLevel, 130)}px`;
+            }
+
+
+            if (type === 'plastic') {
+                el.repelledContainer.innerHTML = '';
+                state.repelledDrops.forEach(pos => {
+                    const repelledDrop = document.createElement('div');
+                    repelledDrop.className = 'repelled-drop';
+                    repelledDrop.style.left = `${pos.x}%`;
+                    repelledDrop.style.top = `${pos.y}px`;
+                    el.repelledContainer.appendChild(repelledDrop);
+                });
+            }
+        }
+
+
+        /**
+         * Resets the entire experiment to its initial state.
+         */
+        function resetExperiment() {
+            Object.assign(experimentState.paper, { drops: 0, waterLevel: 0, status: 'dry', hasLeaked: false });
+            Object.assign(experimentState.tissue, { drops: 0, waterLevel: 0, status: 'dry', hasLeaked: false });
+            Object.assign(experimentState.plastic, { drops: 0, waterLevel: 0, status: 'dry', repelledDrops: [] });
+
+
+            ['paper', 'tissue', 'plastic'].forEach(type => {
+                const el = elements[type];
+                el.drops.textContent = '0';
+                el.status.textContent = 'Ready to start!';
+                el.water.style.height = '0px';
+
+
+                el.button.disabled = false;
+                el.button.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                if (type === 'paper') el.material.style.backgroundColor = '#FFFFFF';
+                if (type === 'tissue') {
+                    el.material.style.backgroundColor = '#F7FAFC';
+                    el.material.style.opacity = '0.8';
+                }
+                if (type === 'plastic') {
+                    el.repelledContainer.innerHTML = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
